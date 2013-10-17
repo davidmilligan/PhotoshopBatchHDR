@@ -35,7 +35,7 @@ var runMergeToHDRFromScript = true;
 var g_ScriptFolderPath = app.path + "/"+ localize("$$$/ScriptingSupport/InstalledScripts=Presets/Scripts");
 var g_ScriptPath = File( g_ScriptFolderPath+'/Merge To HDR.jsx' );
 $.evalFile( g_ScriptPath ); 
-$.level = 2;
+//$.level = 2;
 
 //default settings:
 mergeToHDR.useAlignment = false;
