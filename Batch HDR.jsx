@@ -182,40 +182,38 @@ function convertTo32Bit()
 
 function doSaveFile(filename)
 {
-    switch(saveType)
+    if(saveType == "JPEG")
     {
-        case "JPEG":
-            var jpgSaveOptions = new JPEGSaveOptions();
-            jpgSaveOptions.embedColorProfile = true;
-            jpgSaveOptions.formatOptions = FormatOptions.STANDARDBASELINE;
-            jpgSaveOptions.matte = MatteType.NONE;
-            jpgSaveOptions.quality = jpegQuality;
-            activeDocument.saveAs(new File(filename), jpgSaveOptions, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
-            break;
-
-        case "TIFF":
-            var tifSaveOptions = new TiffSaveOptions();
-            tifSaveOptions.embedColorProfile = true;
-            activeDocument.saveAs(new File(filename), tifSaveOptions, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
-            break;
-
-        case "TIFF LZW":
-            var tifSaveOptions = new TiffSaveOptions();
-            tifSaveOptions.embedColorProfile = true;
-            tifSaveOptions.imageCompression = TIFFEncoding.TIFFLZW;
-            activeDocument.saveAs(new File(filename), tifSaveOptions, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
-            break;
-
-        case "TIFF ZIP":
-            var tifSaveOptions = new TiffSaveOptions();
-            tifSaveOptions.embedColorProfile = true;
-            tifSaveOptions.imageCompression = TIFFEncoding.TIFFZIP;
-            activeDocument.saveAs(new File(filename), tifSaveOptions, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
-            break;
-
-        default:
-            activeDocument.saveAs(new File(filename), undefined, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
-            break;
+        var jpgSaveOptions = new JPEGSaveOptions();
+        jpgSaveOptions.embedColorProfile = true;
+        jpgSaveOptions.formatOptions = FormatOptions.STANDARDBASELINE;
+        jpgSaveOptions.matte = MatteType.NONE;
+        jpgSaveOptions.quality = jpegQuality;
+        activeDocument.saveAs(new File(filename), jpgSaveOptions, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
+    }
+    else if(saveType == "TIFF")
+    {
+        var tifSaveOptions = new TiffSaveOptions();
+        tifSaveOptions.embedColorProfile = true;
+        activeDocument.saveAs(new File(filename), tifSaveOptions, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
+    }
+    else if(saveType == "TIFF LZW")
+    {
+        var tifSaveOptions = new TiffSaveOptions();
+        tifSaveOptions.embedColorProfile = true;
+        tifSaveOptions.imageCompression = TIFFEncoding.TIFFLZW;
+        activeDocument.saveAs(new File(filename), tifSaveOptions, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
+    }
+    else if(saveType == "TIFF ZIP")
+    {
+        var tifSaveOptions = new TiffSaveOptions();
+        tifSaveOptions.embedColorProfile = true;
+        tifSaveOptions.imageCompression = TIFFEncoding.TIFFZIP;
+        activeDocument.saveAs(new File(filename), tifSaveOptions, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
+    }
+    else
+    {
+        activeDocument.saveAs(new File(filename), undefined, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
     }
 }
 
@@ -305,10 +303,6 @@ function promptUser()
                     outputFilenameLabel: StaticText { text: 'Filename Format: ' }, \
                     outputFilenameText: EditText { characters: 10 }, \
                     outputFilenamePost: StaticText { text: '00001.jpg' }, \
-                    zeroPaddingGroup: Group { \
-                        outputFilenamePaddingLabel: StaticText { text: 'Zero Padding:'}, \
-                        outputFilenamePaddingText: EditText { characters: 2, text: '5'}, \
-                    } \
                 }, \
                 saveSettingsGroup: Group { \
                     saveTypeLabel: StaticText { text: 'Save As: ' }, \
@@ -338,7 +332,6 @@ function promptUser()
     var outputBrowse = setupWindow.leftGroup.outputPanel.outputGroup.outputBrowse;
     var outputFilenameText = setupWindow.leftGroup.outputPanel.outputOptionsGroup.outputFilenameText;
     var outputFilenamePost = setupWindow.leftGroup.outputPanel.outputOptionsGroup.outputFilenamePost;
-    var outputFilenamePaddingText = setupWindow.leftGroup.outputPanel.outputOptionsGroup.zeroPaddingGroup.outputFilenamePaddingText;
     var saveDropDown = setupWindow.leftGroup.outputPanel.saveSettingsGroup.saveDropDown;
     var jpegQualityText = setupWindow.leftGroup.outputPanel.saveSettingsGroup.jpegQualityText;
     var jpegQualityLabel = setupWindow.leftGroup.outputPanel.saveSettingsGroup.jpegQualityLabel;
@@ -355,7 +348,6 @@ function promptUser()
     alignCheckBox.value = mergeToHDR.useAlignment;
     deghostCheckBox.value = hdrDeghosting;
     outputFilenameText.text = outputFilename;
-    outputFilenamePaddingText.text = zeroPadding;
     jpegQualityText.text = jpegQuality;
     saveDropDown.add("item", "JPEG");
     saveDropDown.add("item", "TIFF");
@@ -408,17 +400,6 @@ function promptUser()
         okButton.enabled = sourceFolder != null && outputFolder != null && sourceFolder.exists && outputFolder.exists;
     };
     outputFilenameText.onChange = function() { outputFilename = outputFilenameText.text; };
-
-    outputFilenamePaddingText.onChange = function()
-    {  
-        var paddingNumber = parseInt(this.text);
-
-        if (!isNaN(paddingNumber))
-        {
-            zeroPadding = paddingNumber;
-            outputFilenamePost.text = ZeroPad('1', zeroPadding) + '.jpg';
-        }
-    };
 
     saveDropDown.onChange = function()
     {
