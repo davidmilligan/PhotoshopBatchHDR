@@ -360,6 +360,12 @@ function promptUser()
         if(sourceFolder != null)
         {
             sourceBox.text = sourceFolder.fullName;
+
+            if (outputFolder == null)
+            {
+                outputFolder = sourceFolder;
+                outputBox.text = outputFolder.fullName;
+            }
         }
         okButton.enabled = sourceFolder != null && outputFolder != null && sourceFolder.exists && outputFolder.exists;
     };
