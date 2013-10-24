@@ -83,8 +83,9 @@ function main()
 
         var numberOfFiles = files.length;
 
-        /* convert numberOfFiles to a string to make sure zeropadding is high enough to cover all files */
-        var numberOfFilesStr = "" + numberOfFiles;
+        /* convert numberOfFiles to a string to make sure zeropaddingis high enough to cover all files */
+
+        var numberOfFilesStr = "" + (numberOfFiles / numberOfBrackets);
         if (zeroPadding > 0 && zeroPadding < numberOfFilesStr.length)
         {
             zeroPadding = numberOfFilesStr.length;
