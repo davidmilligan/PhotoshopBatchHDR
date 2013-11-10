@@ -51,6 +51,7 @@ var statusText;
 var progressWindow;
 var fileMask = "*";
 var outputFilename = "hdr_output_";
+var zeroPadding = 5;
 
 var hdrRadius = 100;
 var hdrStrength = 0.5;
@@ -79,31 +80,42 @@ function main()
         initializeProgress();
         var files =  sourceFolder.getFiles(fileMask);
         var currentFileList = new Array();
-        for(var index = 0;  index < files.length; index++)
+
+        var numberOfFiles = files.length;
+
+        /* convert numberOfFiles to a string to make sure zeropaddingis high enough to cover all files */
+
+        var numberOfFilesStr = "" + (numberOfFiles / numberOfBrackets);
+        if (zeroPadding > 0 && zeroPadding < numberOfFilesStr.length)
+        {
+            zeroPadding = numberOfFilesStr.length;
+        }
+
+        for(var index = 0;  index < numberOfFiles; index++)
         {
             if((index % numberOfBrackets) == numberOfBrackets - 1)
             {
                 var start = new Date();
-                progress.value = 100 * index / files.length;
+                progress.value = 100 * index / numberOfFiles;
                 currentFileList.push(files[index]);
                 if(userCanceled) break;
                 if(numberOfBrackets > 1)
                 {
-                    statusText.text = "Merging files "+(index-numberOfBrackets+2)+" - "+(index+1)+" of "+files.length + estTimeRemaining;
+                    statusText.text = "Merging files "+(index-numberOfBrackets+2)+" - "+(index+1)+" of "+numberOfFiles + estTimeRemaining;
                     //for braketed exposures use the mergeToHDR script to merge the files into a single 32 bit image
                     mergeToHDR.outputBitDepth= 32;
                     
                     mergeToHDR.mergeFilesToHDR( currentFileList, false, hdrDeghosting ? kMergeToHDRDeghostBest : kMergeToHDRDeghostOff );
-                    statusText.text = "Toning files "+(index-numberOfBrackets+2)+" - "+(index+1)+" of "+files.length+ estTimeRemaining;
+                    statusText.text = "Toning files "+(index-numberOfBrackets+2)+" - "+(index+1)+" of "+numberOfFiles+ estTimeRemaining;
                 }
                 else
                 {
-                    statusText.text = "Loading file "+(index+1)+" of "+files.length+ estTimeRemaining;
+                    statusText.text = "Loading file "+(index+1)+" of "+numberOfFiles+ estTimeRemaining;
                     //otherwise just open the file
                     doOpenFile(files[index]);
-                    statusText.text = "Toning file "+(index+1)+" of "+files.length+ estTimeRemaining;
+                    statusText.text = "Toning file "+(index+1)+" of "+numberOfFiles+ estTimeRemaining;
                 }
-                progress.value = 100 * (index + numberOfBrackets / 2 ) / files.length;
+                progress.value = 100 * (index + numberOfBrackets / 2 ) / numberOfFiles;
                 if(userCanceled) break;
                 if(app.activeDocument != null)
                 {
@@ -116,14 +128,14 @@ function main()
                 
                 if(numberOfBrackets > 1)
                 {
-                    statusText.text = "Saving result "+(index-numberOfBrackets+2)+" - "+(index+1)+" of "+files.length+ estTimeRemaining;
+                    statusText.text = "Saving result "+(index-numberOfBrackets+2)+" - "+(index+1)+" of "+numberOfFiles+ estTimeRemaining;
                 }
                 else
                 {
-                    statusText.text = "Saving result "+(index+1)+" of "+files.length+ estTimeRemaining;
+                    statusText.text = "Saving result "+(index+1)+" of "+numberOfFiles+ estTimeRemaining;
                 }
                 if(userCanceled) break;
-                doSaveFile(outputFolder.absoluteURI + "/" + outputFilename + ZeroPad(Math.round((index + 1)/numberOfBrackets), 5) );
+                doSaveFile(outputFolder.absoluteURI + "/" + outputFilename + ZeroPad(Math.round((index + 1)/numberOfBrackets), zeroPadding) );
                 activeDocument.close(SaveOptions.DONOTSAVECHANGES);
                 
                 //reset our file list
@@ -132,7 +144,7 @@ function main()
                 //calculate time remaining
                 var end = new Date();
                 var timeElapsed = end.getTime() - start.getTime();
-                var mins = timeElapsed / 60000 * ((files.length - index - 1) / numberOfBrackets);
+                var mins = timeElapsed / 60000 * ((numberOfFiles - index - 1) / numberOfBrackets);
                 estTimeRemaining = " | Remaining: " + ZeroPad((mins / 60).toFixed(0),2) + ":" + ZeroPad((mins % 60).toFixed(0),2);
             }
             else
@@ -320,6 +332,7 @@ function promptUser()
     var outputBox = setupWindow.leftGroup.outputPanel.outputGroup.outputBox;
     var outputBrowse = setupWindow.leftGroup.outputPanel.outputGroup.outputBrowse;
     var outputFilenameText = setupWindow.leftGroup.outputPanel.outputOptionsGroup.outputFilenameText;
+    var outputFilenamePost = setupWindow.leftGroup.outputPanel.outputOptionsGroup.outputFilenamePost;
     var saveDropDown = setupWindow.leftGroup.outputPanel.saveSettingsGroup.saveDropDown;
     var jpegQualityText = setupWindow.leftGroup.outputPanel.saveSettingsGroup.jpegQualityText;
     var jpegQualityLabel = setupWindow.leftGroup.outputPanel.saveSettingsGroup.jpegQualityLabel;
@@ -360,6 +373,12 @@ function promptUser()
         if(sourceFolder != null)
         {
             sourceBox.text = sourceFolder.fullName;
+
+            if (outputFolder == null)
+            {
+                outputFolder = sourceFolder;
+                outputBox.text = outputFolder.fullName;
+            }
         }
         okButton.enabled = sourceFolder != null && outputFolder != null && sourceFolder.exists && outputFolder.exists;
     };
@@ -382,6 +401,7 @@ function promptUser()
         okButton.enabled = sourceFolder != null && outputFolder != null && sourceFolder.exists && outputFolder.exists;
     };
     outputFilenameText.onChange = function() { outputFilename = outputFilenameText.text; };
+
     saveDropDown.onChange = function()
     {
         saveType = saveDropDown.selection.text;
