@@ -62,7 +62,7 @@ var hdrHighlights = 0;
 var hdrVibrance = 20;
 var hdrSaturation = 30;
 var hdrSmooth = false;
-var hdrDeghosting = false;
+var hdrDeghosting = true;
 var hdrCurve = "0,0,255,255";
 var estTimeRemaining = "";
 
@@ -93,7 +93,7 @@ function main()
                     //for braketed exposures use the mergeToHDR script to merge the files into a single 32 bit image
                     mergeToHDR.outputBitDepth= 32;
                     
-                    mergeToHDR.mergeFilesToHDR( currentFileList, false, hdrDeghosting ? kMergeToHDRDeghostBest : kMergeToHDRDeghostOff );
+                    mergeToHDR.mergeFilesToHDR( currentFileList, mergeToHDR.useAlignment, hdrDeghosting ? kMergeToHDRDeghostBest : kMergeToHDRDeghostOff );
                     statusText.text = "Toning files "+(index-numberOfBrackets+2)+" - "+(index+1)+" of "+files.length+ estTimeRemaining;
                 }
                 else
@@ -333,6 +333,7 @@ function promptUser()
     //set default values
     bracketBox.text = numberOfBrackets;
     filterText.text = fileMask;
+    //mergeToHDR.useAlignment = true;
     alignCheckBox.value = mergeToHDR.useAlignment;
     deghostCheckBox.value = hdrDeghosting;
     outputFilenameText.text = outputFilename;
@@ -365,8 +366,8 @@ function promptUser()
     };
     bracketBox.onChange = function() { numberOfBrackets = bracketBox.text; };
     filterText.onChange = function() { fileMask = filterText.text; };
-    alignCheckBox.onChanged = function() { mergeToHDR.useAlignment = alignCheckBox.value; };
-    deghostCheckBox.onChanged = function() { hdrDeghosting = deghostCheckBox.value; };
+    alignCheckBox.onClick = function() { mergeToHDR.useAlignment = alignCheckBox.value; };
+    deghostCheckBox.onClick = function() { hdrDeghosting = deghostCheckBox.value; };
     outputBox.onChange = function()
     {
         outputFolder = new Folder(outputBox.text);
@@ -495,7 +496,7 @@ function generateToningPanel(toningPanel)
         loadPreset(null);
         updateSliders();
     };
-    smoothEdgesBox.onChange = function () { hdrSmooth = smoothEdgesBox.value; };
+    smoothEdgesBox.onClick = function () { hdrSmooth = smoothEdgesBox.value; };
     curveBox.onChange = function () { hdrCurve = curveBox.text; };
     selectPreviewButton.onClick = function()
     {
@@ -660,36 +661,52 @@ var loadPreset = function(presetFile)
     }
     if(presetFile != null)
     {
+        var tmpStr = new String();
         var binaryData = new Array();
         presetFile.encoding = "BINARY";
         presetFile.open('r');
         while(!presetFile.eof)
         {
-            binaryData.push(presetFile.readch().charCodeAt(0));
+            var ch = presetFile.readch();
+            if ( ch.charCodeAt(0) == 0 ){
+                tmpStr += ' ';
+            }
+            else {
+                tmpStr += ch;
+            }
+            binaryData.push(ch.charCodeAt(0));
         }
         presetFile.close();
         if(binaryData.length >= 40)
         {
-            var curvePointCount = getUInt16(binaryData,38);
+            // init start position for reading datas
+            // start position for english version ( string "D e f a u l t" is in the preset file )
+            var startPos = 38;
+            if ( tmpStr.search ("P a r   d é f a u t") > -1 ){
+                // start position for french preset file version ( string "P a r   d é f a u t" is in the preset file ) (==> + 6 bytes)
+                startPos = 44;
+            }
+            // if your preset file can't be read, try this : open it in notepad to see the string "D e f a u l t" in your language and add the code here to set startPos to 38 + diff between the length of ("D e f a u l t") and length of ("D e f a u l t" in your language)
+            var curvePointCount = getUInt16(binaryData, startPos);
             if(binaryData.length >= 104 + curvePointCount * 4)
             {
                 var curvePointStr = "";
                 for(var i = 0; i < curvePointCount; i++)
                 {
-                    curvePointStr += getUInt16(binaryData, 42 + i * 4) + "," + getUInt16(binaryData, 40 + i * 4) + ((i < curvePointCount - 1) ? "," : "");
+                    curvePointStr += getUInt16(binaryData, startPos + 4 + i * 4) + "," + getUInt16(binaryData, startPos + 2 + i * 4) + ((i < curvePointCount - 1) ? "," : "");
                 }
                 hdrCurve = curvePointStr;
                 
                 hdrStrength =  getFloat32(binaryData,8);
-                hdrRadius = getFloat32(binaryData, 48 + 5 * curvePointCount);
-                hdrExposure = getFloat32(binaryData, 72 + 5 * curvePointCount);
-                hdrSaturation = getFloat32(binaryData, 76 + 5 * curvePointCount);
-                hdrDetail = getFloat32(binaryData, 80 + 5 * curvePointCount);
-                hdrShadow = getFloat32(binaryData, 84 + 5 * curvePointCount);
-                hdrHighlights = getFloat32(binaryData, 88 + 5 * curvePointCount);
-                hdrGamma = getFloat32(binaryData, 92 + 5 * curvePointCount);
-                hdrVibrance = getFloat32(binaryData, 96 + 5 * curvePointCount);
-                hdrSmooth = getUInt16(binaryData, 100 + 5 * curvePointCount) != 0;
+                hdrRadius = getFloat32(binaryData, startPos + 10 + 5 * curvePointCount);
+                hdrExposure = getFloat32(binaryData, startPos + 34 + 5 * curvePointCount);
+                hdrSaturation = getFloat32(binaryData, startPos + 38 + 5 * curvePointCount);
+                hdrDetail = getFloat32(binaryData, startPos + 42 + 5 * curvePointCount);
+                hdrShadow = getFloat32(binaryData, startPos + 46 + 5 * curvePointCount);
+                hdrHighlights = getFloat32(binaryData, startPos + 50 + 5 * curvePointCount);
+                hdrGamma = getFloat32(binaryData, startPos + 54 + 5 * curvePointCount);
+                hdrVibrance = getFloat32(binaryData, startPos + 58 + 5 * curvePointCount);
+                hdrSmooth = getUInt16(binaryData, startPos + 62 + 5 * curvePointCount) != 0;
             }
             else
             {
@@ -733,4 +750,4 @@ function getFloat32(byteArray,offset)
 }
 
 main();
-        
+
