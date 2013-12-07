@@ -105,10 +105,18 @@ function main()
                 }
                 progress.value = 100 * (index + numberOfBrackets / 2 ) / files.length;
                 if(userCanceled) break;
-                if(app.activeDocument != null)
+                try
                 {
-                    //apply the actual tone mapping to the HDR image to get it back down to 8 bits
-                    doHDRToning();
+                    if(app.activeDocument != null)
+                    {
+                        //apply the actual tone mapping to the HDR image to get it back down to 8 bits
+                        doHDRToning();
+                    }
+                }
+                catch(error)
+                {
+                    alert(error + "\nCheck number of files in source folder");
+                    break;
                 }
                 
                 //save the result and close
