@@ -119,7 +119,7 @@ function main()
                 if(userCanceled) break;
                 try
                 {
-                    if(app.activeDocument != null)
+                    if(app.activeDocument != null && outputBitDepth < 32)
                     {
                         //apply the actual tone mapping to the HDR image to get it back down to 8 bits
                         doHDRToning();
@@ -220,6 +220,42 @@ function doSaveFile(filename)
         tifSaveOptions.imageCompression = TIFFEncoding.TIFFZIP;
         activeDocument.saveAs(new File(filename), tifSaveOptions, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
     }
+    else if(saveType == "Radiance")
+   	{
+   		var idsave = charIDToTypeID( "save" );
+		var desc3 = new ActionDescriptor();
+		var idAs = charIDToTypeID( "As  " );
+		desc3.putString( idAs, """Radiance""" );
+		var idIn = charIDToTypeID( "In  " );
+		desc3.putPath( idIn, new File(filename + ".hdr") );
+		var idDocI = charIDToTypeID( "DocI" );
+		desc3.putInteger( idDocI, 58 );
+		var idLwCs = charIDToTypeID( "LwCs" );
+		desc3.putBoolean( idLwCs, true );
+		var idsaveStage = stringIDToTypeID( "saveStage" );
+		var idsaveStageType = stringIDToTypeID( "saveStageType" );
+		var idsaveSucceeded = stringIDToTypeID( "saveSucceeded" );
+		desc3.putEnumerated( idsaveStage, idsaveStageType, idsaveSucceeded );
+		executeAction( idsave, desc3, DialogModes.NO );
+	}
+    else if(saveType == "OpenEXR")
+   	{
+   		var idsave = charIDToTypeID( "save" );
+		var desc5 = new ActionDescriptor();
+		var idAs = charIDToTypeID( "As  " );
+		desc5.putString( idAs, """OpenEXR""" );
+		var idIn = charIDToTypeID( "In  " );
+		desc5.putPath( idIn, new File(filename + ".exr") );
+		var idDocI = charIDToTypeID( "DocI" );
+		desc5.putInteger( idDocI, 58 );
+		var idLwCs = charIDToTypeID( "LwCs" );
+		desc5.putBoolean( idLwCs, true );
+		var idsaveStage = stringIDToTypeID( "saveStage" );
+		var idsaveStageType = stringIDToTypeID( "saveStageType" );
+		var idsaveSucceeded = stringIDToTypeID( "saveSucceeded" );
+		desc5.putEnumerated( idsaveStage, idsaveStageType, idsaveSucceeded );
+		executeAction( idsave, desc5, DialogModes.NO );
+	}
     else
     {
         activeDocument.saveAs(new File(filename), undefined, true /*Save As Copy*/, Extension.LOWERCASE /*Append Extention*/);
@@ -363,6 +399,8 @@ function promptUser()
     saveDropDown.add("item", "TIFF");
     saveDropDown.add("item", "TIFF LZW");
     saveDropDown.add("item", "TIFF ZIP");
+    saveDropDown.add("item", "Radiance");
+    saveDropDown.add("item", "OpenEXR");
     saveDropDown.add("item", "PSD");
     saveDropDown.selection = 0;
     outputBitDepthDropDown.add("item", "8");
@@ -420,8 +458,12 @@ function promptUser()
         {
             outputBitDepthDropDown.selection = 0;
         }
-        outputBitDepthDropDown.enabled = saveDropDown.selection.text != "JPEG";
-        outputBitDepthLabel.enabled = saveDropDown.selection.text != "JPEG";
+        else if(saveDropDown.selection.text == "OpenEXR" || saveDropDown.selection.text == "Radiance")
+        {
+            outputBitDepthDropDown.selection = 2;
+        }
+        outputBitDepthDropDown.enabled = saveDropDown.selection.text != "JPEG" && saveDropDown.selection.text != "Radiance" && saveDropDown.selection.text != "OpenEXR";
+        outputBitDepthLabel.enabled = outputBitDepthDropDown.enabled;
         
     };
     jpegQualityText.onChange = function() { jpegQuality = jpegQualityText.text; };
