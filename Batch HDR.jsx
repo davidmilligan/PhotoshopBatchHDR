@@ -79,6 +79,7 @@ function main()
     {
         initializeProgress();
         var files =  sourceFolder.getFiles(fileMask);
+        files.sort();
         var currentFileList = new Array();
 
         var numberOfFiles = files.length;
