@@ -571,7 +571,7 @@ function generateToningPanel(toningPanel)
     curveBox.onChange = function () { hdrCurve = curveBox.text; };
     selectPreviewButton.onClick = function()
     {
-        var selectedFiles = File.openDialog("Select file(s) to load for preview", function(){return true;}, true);
+        var selectedFiles = File.openDialog("Select file(s) to load for preview", "*.*", true);
         if(selectedFiles != null)
         {
             cleanUpPreviews();
