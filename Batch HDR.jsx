@@ -63,7 +63,7 @@ var hdrHighlights = 0;
 var hdrVibrance = 20;
 var hdrSaturation = 30;
 var hdrSmooth = false;
-var hdrDeghosting = true;
+var hdrDeghosting = kMergeToHDRDeghostBest;//kMergeToHDRDeghostOff
 var hdrCurve = "0,0,255,255";
 var estTimeRemaining = "";
 
@@ -106,7 +106,7 @@ function main()
                     //for braketed exposures use the mergeToHDR script to merge the files into a single 32 bit image
                     mergeToHDR.outputBitDepth= 32;
                     
-                    mergeToHDR.mergeFilesToHDR( currentFileList, mergeToHDR.useAlignment, hdrDeghosting ? kMergeToHDRDeghostBest : kMergeToHDRDeghostOff );
+                    mergeToHDR.mergeFilesToHDR( currentFileList, mergeToHDR.useAlignment, hdrDeghosting );
                     statusText.text = "Toning files "+(index-numberOfBrackets+2)+" - "+(index+1)+" of "+numberOfFiles+ estTimeRemaining;
                 }
                 else
@@ -265,8 +265,6 @@ function doSaveFile(filename)
 
 function doHDRToning()
 {
-    //TODO: Reverse engineer the HDR Preset file format and allow user to select a preset file and create the ActionDescriptor from the file
-    
     //create the ActionDescriptor that describes the HDR toning settings to use
     var hdDesc = new ActionDescriptor;
     hdDesc.putInteger( stringIDToTypeID( 'version' ), 6 );//I'm not sure what this does
@@ -336,7 +334,8 @@ function promptUser()
                     filterLabel: StaticText { text: 'File Filter: ' }, \
                     filterText: EditText { characters: 5 }, \
                     alignCheckBox: Checkbox { text: 'Align' }\
-                    deghostCheckBox: Checkbox { text: 'Deghost' }\
+                    deghostLabel: StaticText { text: 'Deghost: ' }\
+                    deghostDropDown: DropDownList { }, \
                 } \
             }, \
             toningPanel: Panel { text: 'Toning', orientation:'row', alignChildren:'top' } ,\
@@ -386,14 +385,13 @@ function promptUser()
     var okButton = setupWindow.rightGroup.okButton;
     var cancelButton = setupWindow.rightGroup.cancelButton;
     var toningPanel = setupWindow.leftGroup.toningPanel;
-    var deghostCheckBox = setupWindow.leftGroup.inputPanel.bracketGroup.deghostCheckBox;
+    var deghostDropDown = setupWindow.leftGroup.inputPanel.bracketGroup.deghostDropDown;
     
     //set default values
     bracketBox.text = numberOfBrackets;
     filterText.text = fileMask;
     //mergeToHDR.useAlignment = true;
     alignCheckBox.value = mergeToHDR.useAlignment;
-    deghostCheckBox.value = hdrDeghosting;
     outputFilenameText.text = outputFilename;
     jpegQualityText.text = jpegQuality;
     saveDropDown.add("item", "JPEG");
@@ -408,6 +406,19 @@ function promptUser()
     outputBitDepthDropDown.add("item", "16");
     outputBitDepthDropDown.add("item", "32");
     outputBitDepthDropDown.selection = 0;
+    
+    var generateDeghostDropDownList = function(count)
+    {
+		deghostDropDown.removeAll()
+		deghostDropDown.add("item", "Best");
+		deghostDropDown.add("item", "Off");
+		for(var i = 0; i < count; i++)
+		{
+			deghostDropDown.add("item", i);
+		}
+		deghostDropDown.selection = 0;
+    }
+    generateDeghostDropDownList(numberOfBrackets);
     
     //event handlers
     sourceBox.onChange = function()
@@ -430,10 +441,23 @@ function promptUser()
         }
         okButton.enabled = sourceFolder != null && outputFolder != null && sourceFolder.exists && outputFolder.exists;
     };
-    bracketBox.onChange = function() { numberOfBrackets = bracketBox.text; };
+    bracketBox.onChange = function()
+    { 
+		numberOfBrackets = bracketBox.text;
+		generateDeghostDropDownList(numberOfBrackets);
+    };
     filterText.onChange = function() { fileMask = filterText.text; };
     alignCheckBox.onClick = function() { mergeToHDR.useAlignment = alignCheckBox.value; };
-    deghostCheckBox.onClick = function() { hdrDeghosting = deghostCheckBox.value; };
+    deghostDropDown.onChange = function() 
+    { 
+    	if(this.selection.text == "Best") 
+    		hdrDeghosting = kMergeToHDRDeghostBest;
+    	else if(this.selection.text == "Off")
+    		hdrDeghosting = kMergeToHDRDeghostOff;
+    	else
+    		hdrDeghosting = Number(this.selection.text);
+    		
+    };
     outputBox.onChange = function()
     {
         outputFolder = new Folder(outputBox.text);
