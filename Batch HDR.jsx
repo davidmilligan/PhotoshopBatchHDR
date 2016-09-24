@@ -722,14 +722,15 @@ function setZoomLevel( zoom )
     ref.putEnumerated( charIDToTypeID("capp"), charIDToTypeID("Ordn"), charIDToTypeID("Trgt") );
     var getScrRes = executeActionGet(ref).getObjectValue(stringIDToTypeID('unitsPrefs')).getUnitDoubleValue(stringIDToTypeID('newDocPresetScreenResolution'))/72;
     var docRes = activeDocument.resolution;
-    activeDocument.resizeImage( undefined, undefined, getScrRes/(zoom/100), ResampleMethod.NONE );
+    // CC UPDATE: Document.resizeImage() now takes an additional arg, amount (values: 0-100, describes: resampling)
+    activeDocument.resizeImage( undefined, undefined, getScrRes/(zoom/100), ResampleMethod.NONE, 0 );
     var desc = new ActionDescriptor();
     ref = null;
     ref = new ActionReference();
     ref.putEnumerated( charIDToTypeID( "Mn  " ), charIDToTypeID( "MnIt" ), charIDToTypeID( 'PrnS' ) );
     desc.putReference( charIDToTypeID( "null" ), ref );
     executeAction( charIDToTypeID( "slct" ), desc, DialogModes.NO );
-    activeDocument.resizeImage( undefined, undefined, docRes, ResampleMethod.NONE );
+    activeDocument.resizeImage( undefined, undefined, docRes, ResampleMethod.NONE, 0 );	// also updated for CC
 }
 
 function ZeroPad(number,numZeros)
